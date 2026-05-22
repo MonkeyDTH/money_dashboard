@@ -1,0 +1,51 @@
+{% set acc = account if account is defined and account else None %}
+
+<div>
+  <label class="block text-xs text-muted mb-1">账户名称</label>
+  <input type="text" name="name" value="{{ acc.name if acc else '' }}" required
+    class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+</div>
+
+<div>
+  <label class="block text-xs text-muted mb-1">账户类型</label>
+  <select name="type" required
+    class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+    {% for t in account_types %}
+      <option value="{{ t.value }}" {% if acc and acc.type == t %}selected{% endif %}>{{ t.value }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div x-data="{ ownerType: '{{ acc.owner_type.value if acc else 'family' }}' }">
+  <label class="block text-xs text-muted mb-1">归属</label>
+  <select name="owner_type" x-model="ownerType"
+    class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+    <option value="family">家庭共同</option>
+    <option value="member">个人</option>
+  </select>
+
+  <div x-show="ownerType === 'member'" class="mt-3">
+    <label class="block text-xs text-muted mb-1">归属成员</label>
+    <select name="owner_member_id"
+      class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+      <option value="">— 请选择 —</option>
+      {% for m in members %}
+        <option value="{{ m.id }}" {% if acc and acc.owner_member_id == m.id %}selected{% endif %}>{{ m.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div>
+  <label class="block text-xs text-muted mb-1">备注</label>
+  <input type="text" name="note" value="{{ acc.note if acc and acc.note else '' }}"
+    class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+</div>
+
+{% if acc %}
+<div class="flex items-center gap-2">
+  <input type="checkbox" name="is_active" id="is_active_cb" {% if acc.is_active %}checked{% endif %}
+    class="w-4 h-4 rounded border-border accent-accent" />
+  <label for="is_active_cb" class="text-sm text-ink">账户激活中</label>
+</div>
+{% endif %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}导入导出 · 家庭资产看板{% endblock %}
+{% block page_title %}数据导入导出{% endblock %}
+
+{% block content %}
+<div class="max-w-xl space-y-4">
+
+  <!-- 导出 -->
+  <div class="bg-panel border border-border rounded-xl p-5">
+    <p class="text-sm font-medium text-ink mb-1">导出数据</p>
+    <p class="text-xs text-muted mb-4">将所有数据导出为 Excel 文件（多个 sheet），可用于备份或迁移。</p>
+    <a href="/data/export"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      下载 Excel
+    </a>
+  </div>
+
+  <!-- 导入（Phase 2） -->
+  <div class="bg-panel border border-border rounded-xl p-5 opacity-50">
+    <p class="text-sm font-medium text-ink mb-1">导入数据</p>
+    <p class="text-xs text-muted">从 Excel 模板批量导入历史数据，即将上线。</p>
+  </div>
+
+</div>
+{% endblock %}

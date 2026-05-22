@@ -1,0 +1,15 @@
+<h2 class="text-sm font-semibold text-ink mb-5">编辑账户</h2>
+
+<form hx-post="/accounts/{{ account.id }}"
+      hx-target="#account-table"
+      hx-swap="innerHTML"
+      class="space-y-4">
+  {% include "partials/account_form_fields.html" %}
+  <div class="flex justify-end gap-2 pt-2">
+    <button type="button"
+      onclick="document.getElementById('modal-edit').classList.add('hidden')"
+      class="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">取消</button>
+    <button type="submit"
+      class="px-4 py-2 text-sm bg-accent text-white rounded-md hover:bg-blue-700 transition-colors">保存</button>
+  </div>
+</form>

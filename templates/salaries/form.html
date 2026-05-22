@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}录入薪资 · 家庭资产看板{% endblock %}
+{% block page_title %}录入薪资{% endblock %}
+
+{% block content %}
+<form method="POST" action="/salaries" x-data="salaryForm()" class="max-w-2xl space-y-5">
+
+  <!-- 基本信息 -->
+  <div class="bg-panel border border-border rounded-xl p-5 space-y-4">
+    <p class="text-sm font-medium text-ink">基本信息</p>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs text-muted mb-1">年份</label>
+        <input type="number" name="year" :value="year" @input="year=$event.target.value" min="2000" max="2099" required
+          class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+      </div>
+      <div>
+        <label class="block text-xs text-muted mb-1">月份</label>
+        <select name="month" x-model="month"
+          class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+          {% for m in range(1, 13) %}
+            <option value="{{ m }}" {% if m == default_month %}selected{% endif %}>{{ m }}月</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs text-muted mb-1">公司</label>
+      <select name="company_id" required
+        class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+        {% for c in companies %}
+          <option value="{{ c.id }}">{{ c.name }}{% if not c.end_date %} (在职){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs text-muted mb-1">归属成员</label>
+      <select name="member_id" required
+        class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+        {% for m in members %}
+          <option value="{{ m.id }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs text-muted mb-1">实际发薪日（可选）</label>
+      <input type="date" name="pay_date"
+        class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+    </div>
+  </div>
+
+  <!-- 薪资明细 -->
+  <div class="bg-panel border border-border rounded-xl overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-border flex items-center justify-between">
+      <p class="text-sm font-medium text-ink">薪资明细</p>
+      <div class="flex items-center gap-3 font-mono text-sm">
+        <span class="text-muted">应发</span>
+        <span class="font-medium text-ink">¥ <span x-text="fmt(gross)">0.00</span></span>
+        <span class="text-border">|</span>
+        <span class="text-muted">实发</span>
+        <span class="font-medium text-positive">¥ <span x-text="fmt(net)">0.00</span></span>
+      </div>
+    </div>
+
+    <div class="divide-y divide-border">
+      <template x-for="(item, i) in items" :key="i">
+        <div class="px-5 py-3.5 flex items-center gap-3">
+          <!-- 隐藏字段 -->
+          <input type="hidden" :name="`item_type_${i}`" :value="item.type" />
+          <input type="hidden" :name="`direction_${i}`" :value="item.direction" />
+
+          <div class="w-32 shrink-0">
+            <span class="text-xs text-muted" x-text="item.typeLabel"></span>
+          </div>
+          <input type="text" :name="`label_${i}`" x-model="item.label"
+            class="flex-1 border border-border rounded-md px-2.5 py-1.5 text-sm bg-surface focus:bg-white transition-colors"
+            placeholder="名称" />
+          <select :name="`direction_real_${i}`" x-model="item.direction" @change="calcTotals()"
+            class="w-20 border border-border rounded-md px-2 py-1.5 text-xs bg-surface focus:bg-white transition-colors">
+            <option value="income">收入</option>
+            <option value="deduction">扣除</option>
+          </select>
+          <input type="number" :name="`amount_${i}`" x-model="item.amount" @input="calcTotals()"
+            step="0.01" min="0" placeholder="0.00"
+            class="w-32 text-right font-mono text-sm border border-border rounded-md px-2.5 py-1.5 bg-surface focus:bg-white transition-colors"
+            :class="item.direction==='deduction' ? 'text-negative' : 'text-ink'" />
+          <button type="button" @click="removeItem(i)"
+            class="text-muted hover:text-negative transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </template>
+    </div>
+
+    <!-- 快速添加按钮 -->
+    <div class="px-5 py-3.5 border-t border-border bg-surface">
+      <p class="text-xs text-muted mb-2">快速添加</p>
+      <div class="flex flex-wrap gap-2">
+        {% for t in item_types %}
+        <button type="button"
+          @click="addItem('{{ t.value }}', '{{ item_type_labels[t] }}', '{{ default_directions[t].value }}')"
+          class="px-2.5 py-1 text-xs border border-border rounded-md bg-panel hover:bg-white hover:border-accent hover:text-accent transition-colors text-muted">
+          + {{ item_type_labels[t] }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs text-muted mb-1">备注</label>
+    <input type="text" name="note"
+      class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="/salaries" class="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">取消</a>
+    <button type="submit"
+      class="px-5 py-2.5 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium">
+      保存薪资记录
+    </button>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function salaryForm() {
+  return {
+    year: {{ default_year }},
+    month: {{ default_month }},
+    items: [],
+    gross: 0,
+    net: 0,
+
+    addItem(type, typeLabel, direction) {
+      this.items.push({ type, typeLabel, label: typeLabel, direction, amount: '' })
+    },
+    removeItem(i) {
+      this.items.splice(i, 1)
+      this.calcTotals()
+    },
+    calcTotals() {
+      let g = 0, n = 0
+      for (const item of this.items) {
+        const amt = parseFloat(item.amount) || 0
+        if (item.direction === 'income') { g += amt; n += amt }
+        else { n -= amt }
+      }
+      this.gross = g; this.net = n
+    },
+    fmt(v) {
+      return v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    }
+  }
+}
+</script>
+{% endblock %}

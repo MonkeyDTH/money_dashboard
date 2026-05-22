@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}账户管理 · 家庭资产看板{% endblock %}
+{% block page_title %}账户{% endblock %}
+
+{% block header_actions %}
+<button
+  onclick="document.getElementById('modal-add').classList.remove('hidden')"
+  class="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+  </svg>
+  添加账户
+</button>
+{% endblock %}
+
+{% block content %}
+
+<!-- 账户表格 -->
+<div id="account-table" class="bg-panel border border-border rounded-xl overflow-hidden">
+  {% include "partials/account_table.html" %}
+</div>
+
+<!-- 新增模态框 -->
+<div id="modal-add" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-panel border border-border rounded-xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+    <h2 class="text-sm font-semibold text-ink mb-5">添加账户</h2>
+
+    <form hx-post="/accounts"
+          hx-target="#account-table"
+          hx-swap="innerHTML"
+          hx-on::after-request="document.getElementById('modal-add').classList.add('hidden')"
+          class="space-y-4">
+      {% include "partials/account_form_fields.html" %}
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button"
+          onclick="document.getElementById('modal-add').classList.add('hidden')"
+          class="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">取消</button>
+        <button type="submit"
+          class="px-4 py-2 text-sm bg-accent text-white rounded-md hover:bg-blue-700 transition-colors">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 编辑模态框（HTMX 动态加载内容） -->
+<div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+  <div id="modal-edit-content" class="bg-panel border border-border rounded-xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 编辑按钮点击后显示模态框
+  document.body.addEventListener('htmx:afterSwap', e => {
+    if (e.detail.target.id === 'modal-edit-content') {
+      document.getElementById('modal-edit').classList.remove('hidden')
+    }
+  })
+  document.body.addEventListener('accountSaved', () => {
+    document.getElementById('modal-edit').classList.add('hidden')
+  })
+</script>
+{% endblock %}

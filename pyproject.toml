@@ -1,0 +1,13 @@
+[project]
+name = "money-dashboard"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.18.4",
+    "fastapi[standard]>=0.136.1",
+    "jinja2>=3.1.6",
+    "openpyxl>=3.1.5",
+    "python-multipart>=0.0.29",
+    "sqlmodel>=0.0.38",
+]

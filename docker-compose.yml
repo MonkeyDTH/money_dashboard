@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data   # SQLite 文件持久化到宿主机
+    restart: unless-stopped
+    environment:
+      - DB_PATH=/app/data/money.db

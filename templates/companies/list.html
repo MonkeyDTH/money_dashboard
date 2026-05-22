@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}公司 · 家庭资产看板{% endblock %}
+{% block page_title %}公司{% endblock %}
+
+{% block header_actions %}
+<button onclick="document.getElementById('modal-add-company').classList.remove('hidden')"
+  class="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+  </svg>
+  添加公司
+</button>
+{% endblock %}
+
+{% block content %}
+
+<!-- 公司列表 -->
+<div class="bg-panel border border-border rounded-xl overflow-hidden">
+  {% if companies %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-border">
+        <th class="text-left px-5 py-3 text-xs text-muted font-medium">公司名称</th>
+        <th class="text-left px-4 py-3 text-xs text-muted font-medium">成员</th>
+        <th class="text-left px-4 py-3 text-xs text-muted font-medium">入职时间</th>
+        <th class="text-left px-4 py-3 text-xs text-muted font-medium">离职时间</th>
+        <th class="text-left px-4 py-3 text-xs text-muted font-medium">状态</th>
+        <th class="text-left px-4 py-3 text-xs text-muted font-medium">备注</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-border">
+      {% for c in companies %}
+      <tr class="hover:bg-surface transition-colors">
+        <td class="px-5 py-3.5 font-medium text-ink">{{ c.name }}</td>
+        <td class="px-4 py-3.5 text-muted">{{ member_map[c.member_id].name if c.member_id in member_map else '—' }}</td>
+        <td class="px-4 py-3.5 font-mono text-xs text-muted">{{ c.start_date }}</td>
+        <td class="px-4 py-3.5 font-mono text-xs text-muted">{{ c.end_date if c.end_date else '—' }}</td>
+        <td class="px-4 py-3.5">
+          {% if not c.end_date %}
+            <span class="inline-flex items-center gap-1 text-xs text-positive">
+              <span class="w-1.5 h-1.5 rounded-full bg-positive"></span>在职
+            </span>
+          {% else %}
+            <span class="text-xs text-muted">已离职</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3.5 text-xs text-muted">{{ c.note or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="py-16 text-center text-muted text-sm">还没有公司记录</div>
+  {% endif %}
+</div>
+
+<!-- 新增模态框 -->
+<div id="modal-add-company" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-panel border border-border rounded-xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+    <h2 class="text-sm font-semibold text-ink mb-5">添加公司</h2>
+    <form method="POST" action="/companies" class="space-y-4">
+
+      <div>
+        <label class="block text-xs text-muted mb-1">公司名称</label>
+        <input type="text" name="name" required
+          class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+      </div>
+
+      <div>
+        <label class="block text-xs text-muted mb-1">归属成员</label>
+        <select name="member_id" required
+          class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
+          {% for m in members %}
+            <option value="{{ m.id }}">{{ m.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-muted mb-1">入职日期</label>
+          <input type="date" name="start_date" required
+            class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+        </div>
+        <div>
+          <label class="block text-xs text-muted mb-1">离职日期（在职留空）</label>
+          <input type="date" name="end_date"
+            class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-muted mb-1">备注（职位、城市等）</label>
+        <input type="text" name="note"
+          class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="document.getElementById('modal-add-company').classList.add('hidden')"
+          class="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">取消</button>
+        <button type="submit"
+          class="px-4 py-2 text-sm bg-accent text-white rounded-md hover:bg-blue-700 transition-colors">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

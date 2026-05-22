@@ -1,0 +1,74 @@
+{% set type_colors = {
+  '现金':   'bg-emerald-50 text-emerald-700',
+  '活期':   'bg-blue-50 text-blue-700',
+  '定期':   'bg-indigo-50 text-indigo-700',
+  '货币基金': 'bg-violet-50 text-violet-700',
+  '股票':   'bg-orange-50 text-orange-700',
+  '基金':   'bg-amber-50 text-amber-700',
+  '公积金': 'bg-teal-50 text-teal-700',
+  '房产':   'bg-stone-100 text-stone-700',
+  '车辆':   'bg-slate-100 text-slate-700',
+  '负债':   'bg-red-50 text-red-700',
+  '其他':   'bg-gray-100 text-gray-600',
+} %}
+
+{% if accounts %}
+<table class="w-full text-sm">
+  <thead>
+    <tr class="border-b border-border">
+      <th class="text-left px-5 py-3 text-xs text-muted font-medium">账户名称</th>
+      <th class="text-left px-4 py-3 text-xs text-muted font-medium">类型</th>
+      <th class="text-left px-4 py-3 text-xs text-muted font-medium">归属</th>
+      <th class="text-left px-4 py-3 text-xs text-muted font-medium">货币</th>
+      <th class="text-left px-4 py-3 text-xs text-muted font-medium">状态</th>
+      <th class="text-right px-5 py-3 text-xs text-muted font-medium">操作</th>
+    </tr>
+  </thead>
+  <tbody class="divide-y divide-border">
+    {% for acc in accounts %}
+    <tr class="hover:bg-surface transition-colors {% if not acc.is_active %}opacity-50{% endif %}">
+      <td class="px-5 py-3.5 font-medium text-ink">
+        {{ acc.name }}
+        {% if acc.note %}
+          <span class="ml-1 text-xs text-muted">{{ acc.note }}</span>
+        {% endif %}
+      </td>
+      <td class="px-4 py-3.5">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ type_colors.get(acc.type.value, 'bg-gray-100 text-gray-600') }}">
+          {{ acc.type.value }}
+        </span>
+      </td>
+      <td class="px-4 py-3.5 text-muted">
+        {% if acc.owner_type.value == 'family' %}家庭共同
+        {% else %}
+          个人{% if acc.owner_member_id %}
+            {% for m in members %}{% if m.id == acc.owner_member_id %}·{{ m.name }}{% endif %}{% endfor %}
+          {% endif %}
+        {% endif %}
+      </td>
+      <td class="px-4 py-3.5 text-muted font-mono text-xs">{{ acc.currency }}</td>
+      <td class="px-4 py-3.5">
+        {% if acc.is_active %}
+          <span class="inline-flex items-center gap-1 text-xs text-positive">
+            <span class="w-1.5 h-1.5 rounded-full bg-positive"></span>激活
+          </span>
+        {% else %}
+          <span class="text-xs text-muted">已停用</span>
+        {% endif %}
+      </td>
+      <td class="px-5 py-3.5 text-right">
+        <button
+          hx-get="/accounts/{{ acc.id }}/edit"
+          hx-target="#modal-edit-content"
+          hx-swap="innerHTML"
+          class="text-xs text-muted hover:text-accent transition-colors">编辑</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="py-16 text-center">
+  <p class="text-muted text-sm">还没有账户，点击右上角添加第一个账户</p>
+</div>
+{% endif %}

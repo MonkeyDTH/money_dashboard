@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}薪资明细 · 家庭资产看板{% endblock %}
+{% block page_title %}{{ record.period | period }} 薪资明细{% endblock %}
+
+{% block header_actions %}
+<a href="/salaries" class="text-sm text-muted hover:text-ink transition-colors">← 返回列表</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-4">
+
+  <!-- 摘要卡片 -->
+  <div class="bg-panel border border-border rounded-xl p-5 grid grid-cols-3 gap-4">
+    <div>
+      <p class="text-xs text-muted mb-1">公司</p>
+      <p class="text-sm font-medium text-ink">
+        {{ company_map[record.company_id].name if record.company_id in company_map else '—' }}
+      </p>
+    </div>
+    <div>
+      <p class="text-xs text-muted mb-1">应发合计</p>
+      <p class="font-mono text-sm text-ink">¥ {{ record.gross | amount }}</p>
+    </div>
+    <div>
+      <p class="text-xs text-muted mb-1">实发合计</p>
+      <p class="font-mono text-lg font-semibold text-positive">¥ {{ record.net | amount }}</p>
+    </div>
+  </div>
+
+  <!-- 明细表 -->
+  <div class="bg-panel border border-border rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border">
+          <th class="text-left px-5 py-3 text-xs text-muted font-medium">类型</th>
+          <th class="text-left px-4 py-3 text-xs text-muted font-medium">名称</th>
+          <th class="text-right px-5 py-3 text-xs text-muted font-medium">金额</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-border">
+        {% for item in items %}
+        <tr class="hover:bg-surface transition-colors">
+          <td class="px-5 py-3 text-xs text-muted">{{ item_type_labels.get(item.item_type, item.item_type.value) }}</td>
+          <td class="px-4 py-3 text-ink">{{ item.label }}</td>
+          <td class="px-5 py-3 text-right font-mono text-sm
+            {% if item.direction == Direction.deduction %}text-negative{% else %}text-ink{% endif %}">
+            {% if item.direction == Direction.deduction %}−{% endif %}¥ {{ item.amount | amount }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if record.note %}
+  <div class="bg-panel border border-border rounded-xl px-5 py-4">
+    <p class="text-xs text-muted mb-1">备注</p>
+    <p class="text-sm text-ink">{{ record.note }}</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

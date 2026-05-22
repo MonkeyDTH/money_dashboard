@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}薪资 · 家庭资产看板{% endblock %}
+{% block page_title %}薪资记录{% endblock %}
+
+{% block header_actions %}
+<a href="/salaries/new"
+   class="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+  </svg>
+  录入薪资
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="bg-panel border border-border rounded-xl overflow-hidden">
+  {% if records %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-border">
+        <th class="text-left px-5 py-3 text-xs text-muted font-medium">月份</th>
+        <th class="text-left px-4 py-3 text-xs text-muted font-medium">公司</th>
+        <th class="text-right px-4 py-3 text-xs text-muted font-medium">应发</th>
+        <th class="text-right px-5 py-3 text-xs text-muted font-medium">实发</th>
+        <th class="text-right px-5 py-3 text-xs text-muted font-medium"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-border">
+      {% for r in records %}
+      <tr class="hover:bg-surface transition-colors">
+        <td class="px-5 py-3.5 font-medium text-ink">{{ r.period | period }}</td>
+        <td class="px-4 py-3.5 text-muted">
+          {{ company_map[r.company_id].name if r.company_id in company_map else '—' }}
+        </td>
+        <td class="px-4 py-3.5 text-right font-mono text-xs text-muted">¥ {{ r.gross | amount }}</td>
+        <td class="px-5 py-3.5 text-right font-mono text-sm font-medium text-ink">¥ {{ r.net | amount }}</td>
+        <td class="px-5 py-3.5 text-right">
+          <a href="/salaries/{{ r.id }}" class="text-xs text-muted hover:text-accent transition-colors">查看明细</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="py-16 text-center text-muted text-sm">还没有薪资记录，点击右上角开始录入</div>
+  {% endif %}
+</div>
+{% endblock %}
