@@ -1,9 +1,9 @@
-FROM python:3.11-slim
+FROM docker.m.daocloud.io/python:3.11-slim
 
 WORKDIR /app
 
 # 安装 uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.m.daocloud.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # 先复制依赖文件，利用 Docker 层缓存
 COPY pyproject.toml uv.lock ./
