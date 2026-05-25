@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}收支录入 · 家庭资产看板{% endblock %}
+{% block page_title %}{{ year }}年{{ month }}月 · 收支录入{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-2">
+  {% set prev_m = month - 1 if month > 1 else 12 %}
+  {% set prev_y = year if month > 1 else year - 1 %}
+  {% set next_m = month + 1 if month < 12 else 1 %}
+  {% set next_y = year if month < 12 else year + 1 %}
+  <a href="/expenses?year={{ prev_y }}&month={{ prev_m }}"
+     class="p-1.5 text-muted hover:text-ink transition-colors rounded-md hover:bg-border">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </a>
+  <span class="text-sm font-medium text-ink">{{ year }}年{{ month }}月</span>
+  <a href="/expenses?year={{ next_y }}&month={{ next_m }}"
+     class="p-1.5 text-muted hover:text-ink transition-colors rounded-md hover:bg-border">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+    </svg>
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ─── 月度支出 ─── -->
+<div class="mb-6">
+  <div class="flex items-center justify-between mb-2 px-0.5">
+    <p class="text-xs text-muted uppercase tracking-wide">月度支出</p>
+  </div>
+
+  <div class="bg-panel border border-border rounded-xl overflow-hidden">
+    <form method="POST" action="/expenses/save">
+      <input type="hidden" name="year" value="{{ year }}" />
+      <input type="hidden" name="month" value="{{ month }}" />
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left px-5 py-3 text-xs text-muted font-medium">类别</th>
+            <th class="text-right px-4 py-3 text-xs text-muted font-medium">家庭共同（元）</th>
+            <th class="text-right px-4 py-3 text-xs text-muted font-medium">个人（元）</th>
+            <th class="hidden sm:table-cell text-left px-4 py-3 text-xs text-muted font-medium">备注</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          {% for cat in categories %}
+          {% set fam_key = (cat.id, 'family', None) %}
+          {% set per_key = (cat.id, 'member', self_member.id if self_member else None) %}
+          {% set fam_exp = expenses.get(fam_key) %}
+          {% set per_exp = expenses.get(per_key) %}
+          <tr class="hover:bg-surface transition-colors">
+            <td class="px-5 py-3 font-medium text-ink">{{ cat.name }}</td>
+            <td class="px-4 py-3 text-right">
+              <input type="number" name="expense_{{ cat.id }}_family"
+                     step="0.01" min="0"
+                     value="{{ fam_exp.amount if fam_exp else '' }}"
+                     placeholder="—"
+                     class="w-28 sm:w-36 text-right font-mono text-sm border border-border rounded-md px-3 py-1.5
+                            bg-surface focus:bg-white focus:border-accent transition-colors
+                            {{ 'text-ink' if fam_exp else 'text-muted' }}" />
+            </td>
+            <td class="px-4 py-3 text-right">
+              <input type="number" name="expense_{{ cat.id }}_member"
+                     step="0.01" min="0"
+                     value="{{ per_exp.amount if per_exp else '' }}"
+                     placeholder="—"
+                     class="w-28 sm:w-36 text-right font-mono text-sm border border-border rounded-md px-3 py-1.5
+                            bg-surface focus:bg-white focus:border-accent transition-colors
+                            {{ 'text-ink' if per_exp else 'text-muted' }}" />
+            </td>
+            <td class="hidden sm:table-cell px-4 py-3">
+              <input type="text" name="note_{{ cat.id }}_family"
+                     value="{{ fam_exp.note if fam_exp and fam_exp.note else '' }}"
+                     placeholder="备注（家庭）"
+                     class="w-full text-sm border border-border rounded-md px-3 py-1.5
+                            bg-surface focus:bg-white focus:border-accent transition-colors text-muted" />
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="px-5 py-3 border-t border-border flex justify-end">
+        <button type="submit"
+                class="px-5 py-2 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium">
+          保存支出
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── 其他收入 ─── -->
+<div class="mb-6">
+  <div class="flex items-center justify-between mb-2 px-0.5">
+    <p class="text-xs text-muted uppercase tracking-wide">其他收入</p>
+  </div>
+
+  <div class="bg-panel border border-border rounded-xl overflow-hidden">
+
+    {% if other_incomes %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border">
+          <th class="text-left px-5 py-3 text-xs text-muted font-medium">归属</th>
+          <th class="text-right px-4 py-3 text-xs text-muted font-medium">金额（元）</th>
+          <th class="text-left px-4 py-3 text-xs text-muted font-medium">备注</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-border">
+        {% for inc in other_incomes %}
+        <tr class="hover:bg-surface transition-colors">
+          <td class="px-5 py-3 text-sm text-ink">
+            {{ "家庭" if inc.owner_type.value == "family" else "个人" }}
+          </td>
+          <td class="px-4 py-3 text-right font-mono text-sm text-ink">
+            {{ "{:,.2f}".format(inc.amount) }}
+          </td>
+          <td class="px-4 py-3 text-sm text-muted">{{ inc.note or "—" }}</td>
+          <td class="px-4 py-3 text-right">
+            <form method="POST" action="/expenses/income/{{ inc.id }}/delete"
+                  onsubmit="return confirm('确认删除这条收入记录？')">
+              <input type="hidden" name="year" value="{{ year }}" />
+              <input type="hidden" name="month" value="{{ month }}" />
+              <button type="submit"
+                      class="text-xs text-muted hover:text-negative transition-colors">
+                删除
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-6 text-center text-muted text-sm">本月暂无其他收入</div>
+    {% endif %}
+
+    <!-- 添加收入表单 -->
+    <div class="px-5 py-4 border-t border-border" x-data="{ open: false }">
+      <button type="button" @click="open = !open"
+              class="text-sm text-accent hover:text-blue-700 transition-colors font-medium flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        添加收入
+      </button>
+
+      <form method="POST" action="/expenses/income/add" x-show="open" x-transition
+            class="mt-3 flex flex-wrap gap-3 items-end">
+        <input type="hidden" name="year" value="{{ year }}" />
+        <input type="hidden" name="month" value="{{ month }}" />
+
+        <div>
+          <label class="block text-xs text-muted mb-1">归属</label>
+          <select name="owner_type"
+                  class="text-sm border border-border rounded-md px-3 py-1.5 bg-surface focus:border-accent transition-colors">
+            <option value="family">家庭</option>
+            <option value="member">个人</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-muted mb-1">金额（元）</label>
+          <input type="number" name="amount" step="0.01" min="0" required
+                 placeholder="0.00"
+                 class="w-32 font-mono text-sm border border-border rounded-md px-3 py-1.5
+                        bg-surface focus:bg-white focus:border-accent transition-colors" />
+        </div>
+
+        <div>
+          <label class="block text-xs text-muted mb-1">备注</label>
+          <input type="text" name="note"
+                 placeholder="来源说明，如租金"
+                 class="w-40 text-sm border border-border rounded-md px-3 py-1.5
+                        bg-surface focus:bg-white focus:border-accent transition-colors" />
+        </div>
+
+        <button type="submit"
+                class="px-4 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium">
+          确认添加
+        </button>
+        <button type="button" @click="open = false"
+                class="px-4 py-1.5 text-sm text-muted hover:text-ink transition-colors">
+          取消
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
