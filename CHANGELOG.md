@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.1] - 2026-05-25
+
+### Added
+- NAS 运维手册（SSH 免密登录、文件传输、Docker 常用命令）
+
+### Changed
+- Docker 基础镜像和 uv 镜像切换为 DaoCloud 国内代理
+- Python 依赖安装改用清华 PyPI 镜像，启用 BuildKit 缓存加速构建
+- 服务对外端口改为 7335
+
 ## [0.1.0] - 2026-05-25
 
 ### Added
