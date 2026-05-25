@@ -30,7 +30,7 @@
   <thead>
     <tr class="border-b border-border">
       <th class="text-left px-5 py-3 text-xs text-muted font-medium">账户</th>
-      <th class="text-left px-4 py-3 text-xs text-muted font-medium">类型</th>
+      <th class="hidden sm:table-cell text-left px-4 py-3 text-xs text-muted font-medium">类型</th>
       <th class="text-right px-5 py-3 text-xs text-muted font-medium">余额（元）</th>
     </tr>
   </thead>
@@ -38,7 +38,7 @@
     {% for acc in group_accounts %}
     <tr class="hover:bg-surface transition-colors">
       <td class="px-5 py-3 font-medium text-ink">{{ acc.name }}</td>
-      <td class="px-4 py-3 text-xs text-muted">{{ acc.type.value }}</td>
+      <td class="hidden sm:table-cell px-4 py-3 text-xs text-muted">{{ acc.type.value }}</td>
       <td class="px-5 py-3 text-right">
         <input
           type="number"
@@ -48,7 +48,7 @@
           value="{{ existing[acc.id].balance if acc.id in existing else '' }}"
           data-prev="{{ prev[acc.id] if acc.id in prev else '' }}"
           placeholder="—"
-          class="w-44 text-right font-mono text-sm border border-border rounded-md px-3 py-1.5
+          class="w-32 sm:w-44 text-right font-mono text-sm border border-border rounded-md px-3 py-1.5
                  bg-surface focus:bg-white focus:border-accent transition-colors
                  {% if acc.id in existing %}text-ink{% else %}text-muted{% endif %}" />
       </td>

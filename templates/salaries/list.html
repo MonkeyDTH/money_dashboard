@@ -19,8 +19,8 @@
     <thead>
       <tr class="border-b border-border">
         <th class="text-left px-5 py-3 text-xs text-muted font-medium">月份</th>
-        <th class="text-left px-4 py-3 text-xs text-muted font-medium">公司</th>
-        <th class="text-right px-4 py-3 text-xs text-muted font-medium">应发</th>
+        <th class="hidden sm:table-cell text-left px-4 py-3 text-xs text-muted font-medium">公司</th>
+        <th class="hidden sm:table-cell text-right px-4 py-3 text-xs text-muted font-medium">应发</th>
         <th class="text-right px-5 py-3 text-xs text-muted font-medium">实发</th>
         <th class="text-right px-5 py-3 text-xs text-muted font-medium"></th>
       </tr>
@@ -29,10 +29,10 @@
       {% for r in records %}
       <tr class="hover:bg-surface transition-colors">
         <td class="px-5 py-3.5 font-medium text-ink">{{ r.period | period }}</td>
-        <td class="px-4 py-3.5 text-muted">
+        <td class="hidden sm:table-cell px-4 py-3.5 text-muted">
           {{ company_map[r.company_id].name if r.company_id in company_map else '—' }}
         </td>
-        <td class="px-4 py-3.5 text-right font-mono text-xs text-muted">¥ {{ r.gross | amount }}</td>
+        <td class="hidden sm:table-cell px-4 py-3.5 text-right font-mono text-xs text-muted">¥ {{ r.gross | amount }}</td>
         <td class="px-5 py-3.5 text-right font-mono text-sm font-medium text-ink">¥ {{ r.net | amount }}</td>
         <td class="px-5 py-3.5 text-right">
           <a href="/salaries/{{ r.id }}" class="text-xs text-muted hover:text-accent transition-colors">查看明细</a>
