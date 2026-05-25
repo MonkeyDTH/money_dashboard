@@ -7,7 +7,9 @@ COPY --from=ghcr.m.daocloud.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # 先复制依赖文件，利用 Docker 层缓存
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+    uv sync --frozen --no-dev
 
 # 复制源码
 COPY app/ ./app/
