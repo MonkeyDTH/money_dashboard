@@ -14,9 +14,15 @@ router = APIRouter(prefix="/accounts", tags=["accounts"])
 async def accounts_list(request: Request, session: Session = Depends(get_session)):
     accounts = session.exec(select(Account).order_by(Account.sort_order, Account.id)).all()
     members = session.exec(select(Member)).all()
+    member_map = {m.id: m for m in members}
+    family_accounts = [a for a in accounts if a.owner_type == OwnerType.family]
+    personal_accounts = [a for a in accounts if a.owner_type == OwnerType.member]
     return templates.TemplateResponse(request, "accounts/list.html", {
         "accounts": accounts,
+        "family_accounts": family_accounts,
+        "personal_accounts": personal_accounts,
         "members": members,
+        "member_map": member_map,
         "account_types": AccountType,
         "owner_types": OwnerType,
     })
@@ -42,9 +48,16 @@ async def accounts_create(
     session.commit()
     accounts = session.exec(select(Account).order_by(Account.sort_order, Account.id)).all()
     members = session.exec(select(Member)).all()
-    return templates.TemplateResponse(request, "partials/account_table.html", {
+    family_accounts = [a for a in accounts if a.owner_type == OwnerType.family]
+    personal_accounts = [a for a in accounts if a.owner_type == OwnerType.member]
+    return templates.TemplateResponse(request, "accounts/list.html", {
         "accounts": accounts,
+        "family_accounts": family_accounts,
+        "personal_accounts": personal_accounts,
         "members": members,
+        "member_map": {m.id: m for m in members},
+        "account_types": AccountType,
+        "owner_types": OwnerType,
     }, headers={"HX-Trigger": "accountSaved"})
 
 
@@ -89,7 +102,14 @@ async def accounts_update(
     session.commit()
     accounts = session.exec(select(Account).order_by(Account.sort_order, Account.id)).all()
     members = session.exec(select(Member)).all()
-    return templates.TemplateResponse(request, "partials/account_table.html", {
+    family_accounts = [a for a in accounts if a.owner_type == OwnerType.family]
+    personal_accounts = [a for a in accounts if a.owner_type == OwnerType.member]
+    return templates.TemplateResponse(request, "accounts/list.html", {
         "accounts": accounts,
+        "family_accounts": family_accounts,
+        "personal_accounts": personal_accounts,
         "members": members,
+        "member_map": {m.id: m for m in members},
+        "account_types": AccountType,
+        "owner_types": OwnerType,
     }, headers={"HX-Trigger": "accountSaved"})

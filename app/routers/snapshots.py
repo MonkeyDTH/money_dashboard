@@ -8,7 +8,7 @@ import calendar
 
 from app.database import get_session
 from app.deps import templates
-from app.models import Account, AccountSnapshot
+from app.models import Account, AccountSnapshot, OwnerType
 
 router = APIRouter(prefix="/snapshots", tags=["snapshots"])
 
@@ -49,11 +49,16 @@ async def snapshots_entry(
         ).all()
     }
 
+    family_accounts = [a for a in accounts if a.owner_type == OwnerType.family]
+    personal_accounts = [a for a in accounts if a.owner_type == OwnerType.member]
+
     return templates.TemplateResponse(request, "snapshots/entry.html", {
         "year": year,
         "month": month,
         "period": period,
         "accounts": accounts,
+        "family_accounts": family_accounts,
+        "personal_accounts": personal_accounts,
         "existing": existing,
         "prev": prev,
     })

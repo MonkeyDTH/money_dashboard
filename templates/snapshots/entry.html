@@ -3,7 +3,6 @@
 {% block page_title %}{{ year }}年{{ month }}月 · 余额录入{% endblock %}
 
 {% block header_actions %}
-<!-- 月份切换 -->
 <div class="flex items-center gap-2">
   {% set prev_m = month - 1 if month > 1 else 12 %}
   {% set prev_y = year if month > 1 else year - 1 %}
@@ -25,55 +24,87 @@
 </div>
 {% endblock %}
 
+{% macro account_table(group_accounts) %}
+{% if group_accounts %}
+<table class="w-full text-sm">
+  <thead>
+    <tr class="border-b border-border">
+      <th class="text-left px-5 py-3 text-xs text-muted font-medium">账户</th>
+      <th class="text-left px-4 py-3 text-xs text-muted font-medium">类型</th>
+      <th class="text-right px-5 py-3 text-xs text-muted font-medium">余额（元）</th>
+    </tr>
+  </thead>
+  <tbody class="divide-y divide-border">
+    {% for acc in group_accounts %}
+    <tr class="hover:bg-surface transition-colors">
+      <td class="px-5 py-3 font-medium text-ink">{{ acc.name }}</td>
+      <td class="px-4 py-3 text-xs text-muted">{{ acc.type.value }}</td>
+      <td class="px-5 py-3 text-right">
+        <input
+          type="number"
+          name="balance_{{ acc.id }}"
+          id="bal_{{ acc.id }}"
+          step="0.01"
+          value="{{ existing[acc.id].balance if acc.id in existing else '' }}"
+          data-prev="{{ prev[acc.id] if acc.id in prev else '' }}"
+          placeholder="—"
+          class="w-44 text-right font-mono text-sm border border-border rounded-md px-3 py-1.5
+                 bg-surface focus:bg-white focus:border-accent transition-colors
+                 {% if acc.id in existing %}text-ink{% else %}text-muted{% endif %}" />
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="py-8 text-center text-muted text-sm">暂无账户</div>
+{% endif %}
+{% endmacro %}
+
 {% block content %}
 <form method="POST" action="/snapshots">
   <input type="hidden" name="year" value="{{ year }}" />
   <input type="hidden" name="month" value="{{ month }}" />
 
-  <div class="bg-panel border border-border rounded-xl overflow-hidden mb-4">
-    <div class="px-5 py-3.5 border-b border-border flex items-center justify-between">
-      <p class="text-sm font-medium text-ink">账户余额</p>
-      <button type="button" id="btn-copy-prev"
+  {% if not accounts %}
+  <div class="bg-panel border border-border rounded-xl py-12 text-center text-muted text-sm mb-4">
+    请先在"账户"页面添加账户
+  </div>
+  {% else %}
+
+  <!-- 家庭共同账户 -->
+  {% if family_accounts %}
+  <div class="mb-5">
+    <div class="flex items-center justify-between mb-2 px-0.5">
+      <p class="text-xs text-muted uppercase tracking-wide">家庭共同</p>
+      <button type="button" data-copy-group="family"
         class="text-xs text-accent hover:text-blue-700 transition-colors">
-        复制上月数据
+        复制上月
       </button>
     </div>
-
-    {% if accounts %}
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="border-b border-border">
-          <th class="text-left px-5 py-3 text-xs text-muted font-medium">账户</th>
-          <th class="text-left px-4 py-3 text-xs text-muted font-medium">类型</th>
-          <th class="text-right px-5 py-3 text-xs text-muted font-medium">余额（元）</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-border">
-        {% for acc in accounts %}
-        <tr class="hover:bg-surface transition-colors">
-          <td class="px-5 py-3 font-medium text-ink">{{ acc.name }}</td>
-          <td class="px-4 py-3 text-xs text-muted">{{ acc.type.value }}</td>
-          <td class="px-5 py-3 text-right">
-            <input
-              type="number"
-              name="balance_{{ acc.id }}"
-              id="bal_{{ acc.id }}"
-              step="0.01"
-              value="{{ existing[acc.id].balance if acc.id in existing else '' }}"
-              data-prev="{{ prev[acc.id] if acc.id in prev else '' }}"
-              placeholder="—"
-              class="w-44 text-right font-mono text-sm border border-border rounded-md px-3 py-1.5
-                     bg-surface focus:bg-white focus:border-accent transition-colors
-                     {% if acc.id in existing %}text-ink{% else %}text-muted{% endif %}" />
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="py-12 text-center text-muted text-sm">请先在"账户"页面添加账户</div>
-    {% endif %}
+    <div class="bg-panel border border-border rounded-xl overflow-hidden">
+      {{ account_table(family_accounts) }}
+    </div>
   </div>
+  {% endif %}
+
+  <!-- 个人账户 -->
+  {% if personal_accounts %}
+  <div class="mb-5">
+    <div class="flex items-center justify-between mb-2 px-0.5">
+      <p class="text-xs text-muted uppercase tracking-wide">个人</p>
+      <button type="button" data-copy-group="personal"
+        class="text-xs text-accent hover:text-blue-700 transition-colors">
+        复制上月
+      </button>
+    </div>
+    <div class="bg-panel border border-border rounded-xl overflow-hidden">
+      {{ account_table(personal_accounts) }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
 
   <div class="flex justify-end">
     <button type="submit"
@@ -86,10 +117,19 @@
 
 {% block scripts %}
 <script>
-document.getElementById('btn-copy-prev')?.addEventListener('click', () => {
-  document.querySelectorAll('input[data-prev]').forEach(input => {
-    const prev = input.dataset.prev
-    if (prev !== '') input.value = prev
+// 家庭账户 id 集合，用于按组复制上月
+const familyIds = new Set([{% for a in family_accounts %}{{ a.id }},{% endfor %}])
+const personalIds = new Set([{% for a in personal_accounts %}{{ a.id }},{% endfor %}])
+
+document.querySelectorAll('[data-copy-group]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const ids = btn.dataset.copyGroup === 'family' ? familyIds : personalIds
+    document.querySelectorAll('input[data-prev]').forEach(input => {
+      const accId = parseInt(input.id.replace('bal_', ''))
+      if (ids.has(accId) && input.dataset.prev !== '') {
+        input.value = input.dataset.prev
+      }
+    })
   })
 })
 </script>

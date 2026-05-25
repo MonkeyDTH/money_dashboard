@@ -5,6 +5,20 @@
 
 {% block content %}
 
+<!-- 视图 Tab -->
+<div class="flex items-center gap-1 mb-5 bg-border/40 rounded-lg p-1 w-fit">
+  <a href="/?view=family"
+     class="px-4 py-1.5 text-sm rounded-md transition-colors
+            {% if view == 'family' %}bg-panel text-ink font-medium shadow-sm{% else %}text-muted hover:text-ink{% endif %}">
+    家庭
+  </a>
+  <a href="/?view=personal"
+     class="px-4 py-1.5 text-sm rounded-md transition-colors
+            {% if view == 'personal' %}bg-panel text-ink font-medium shadow-sm{% else %}text-muted hover:text-ink{% endif %}">
+    个人
+  </a>
+</div>
+
 <!-- 指标卡片行 -->
 <div class="grid grid-cols-3 gap-4 mb-6">
 

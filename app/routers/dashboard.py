@@ -2,24 +2,35 @@ from fastapi import APIRouter, Request, Depends
 from sqlmodel import Session, select, func
 from decimal import Decimal
 from datetime import date
+from typing import Literal
 import json
 
 from app.database import get_session
 from app.deps import templates
-from app.models import Account, AccountSnapshot, SalaryRecord, AccountType
+from app.models import Account, AccountSnapshot, SalaryRecord, AccountType, Member, OwnerType
 
 router = APIRouter()
 
 
-@router.get("/", name="dashboard")
-async def dashboard(request: Request, session: Session = Depends(get_session)):
-    snapshots = session.exec(
+def _build_dashboard_data(session: Session, view: str) -> dict:
+    """按视图过滤账户，计算净资产趋势、资产配置、收入数据。"""
+    # 确定过滤条件
+    self_member = session.exec(select(Member).where(Member.is_self == True)).first()
+
+    q = (
         select(AccountSnapshot.period, Account.type, func.sum(AccountSnapshot.balance).label("total"))
         .join(Account, Account.id == AccountSnapshot.account_id)
         .where(Account.is_active == True)
-        .group_by(AccountSnapshot.period, Account.type)
-        .order_by(AccountSnapshot.period)
-    ).all()
+    )
+    if view == "personal":
+        q = q.where(Account.owner_type == OwnerType.member)
+        if self_member:
+            q = q.where(Account.owner_member_id == self_member.id)
+    else:
+        q = q.where(Account.owner_type == OwnerType.family)
+
+    q = q.group_by(AccountSnapshot.period, Account.type).order_by(AccountSnapshot.period)
+    snapshots = session.exec(q).all()
 
     period_net: dict[date, Decimal] = {}
     period_by_type: dict[date, dict[str, Decimal]] = {}
@@ -37,8 +48,7 @@ async def dashboard(request: Request, session: Session = Depends(get_session)):
 
     latest_by_type: dict[str, float] = {}
     if sorted_periods:
-        latest_period = sorted_periods[-1]
-        latest_by_type = {k: float(v) for k, v in period_by_type[latest_period].items()}
+        latest_by_type = {k: float(v) for k, v in period_by_type[sorted_periods[-1]].items()}
 
     current_net = Decimal("0")
     net_change = Decimal("0")
@@ -54,15 +64,28 @@ async def dashboard(request: Request, session: Session = Depends(get_session)):
         .limit(12)
     ).all()
     salary_rows = list(reversed(salary_rows))
-    salary_labels = [f"{r.period.year}年{r.period.month}月" for r in salary_rows]
-    salary_data = [float(r.total) for r in salary_rows]
 
-    return templates.TemplateResponse(request, "dashboard/index.html", {
+    return {
         "current_net": current_net,
         "net_change": net_change,
         "trend_labels": json.dumps(trend_labels, ensure_ascii=False),
         "trend_data": json.dumps(trend_data),
         "latest_by_type": json.dumps(latest_by_type, ensure_ascii=False),
-        "salary_labels": json.dumps(salary_labels, ensure_ascii=False),
-        "salary_data": json.dumps(salary_data),
+        "salary_labels": json.dumps([f"{r.period.year}年{r.period.month}月" for r in salary_rows], ensure_ascii=False),
+        "salary_data": json.dumps([float(r.total) for r in salary_rows]),
+    }
+
+
+@router.get("/", name="dashboard")
+async def dashboard(
+    request: Request,
+    view: str = "family",
+    session: Session = Depends(get_session),
+):
+    if view not in ("family", "personal"):
+        view = "family"
+    data = _build_dashboard_data(session, view)
+    return templates.TemplateResponse(request, "dashboard/index.html", {
+        "view": view,
+        **data,
     })

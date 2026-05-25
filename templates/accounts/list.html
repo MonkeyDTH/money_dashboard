@@ -15,9 +15,28 @@
 
 {% block content %}
 
-<!-- 账户表格 -->
-<div id="account-table" class="bg-panel border border-border rounded-xl overflow-hidden">
-  {% include "partials/account_table.html" %}
+<div id="account-table" class="space-y-5">
+
+  <!-- 家庭共同账户 -->
+  <div>
+    <p class="text-xs text-muted uppercase tracking-wide mb-2 px-0.5">家庭共同</p>
+    <div class="bg-panel border border-border rounded-xl overflow-hidden">
+      {% with accounts=family_accounts %}
+        {% include "partials/account_table.html" %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- 个人账户 -->
+  <div>
+    <p class="text-xs text-muted uppercase tracking-wide mb-2 px-0.5">个人</p>
+    <div class="bg-panel border border-border rounded-xl overflow-hidden">
+      {% with accounts=personal_accounts %}
+        {% include "partials/account_table.html" %}
+      {% endwith %}
+    </div>
+  </div>
+
 </div>
 
 <!-- 新增模态框 -->
