@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    container_name: money_dashboard
     platform: linux/amd64
     ports:
       - "7335:8000"
