@@ -3,7 +3,7 @@ services:
     build: .
     platform: linux/amd64
     ports:
-      - "8000:8000"
+      - "7335:8000"
     volumes:
       - ./data:/app/data   # SQLite 文件持久化到宿主机
     restart: unless-stopped
