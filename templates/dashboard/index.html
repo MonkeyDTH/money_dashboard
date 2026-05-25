@@ -83,7 +83,7 @@ trendChart.setOption({
   grid: { left: 16, right: 16, top: 12, bottom: 24, containLabel: true },
   xAxis: {
     type: 'category',
-    data: {{ trend_labels }},
+    data: {{ trend_labels | safe }},
     axisLine: { lineStyle: { color: BORDER } },
     axisTick: { show: false },
     axisLabel: { color: MUTED, fontSize: 11, fontFamily: FONT },
@@ -98,7 +98,7 @@ trendChart.setOption({
   },
   series: [{
     type: 'line',
-    data: {{ trend_data }},
+    data: {{ trend_data | safe }},
     smooth: 0.3,
     symbol: 'circle',
     symbolSize: 5,
@@ -113,7 +113,7 @@ trendChart.setOption({
 })
 
 // ── 资产配置环形图 ──
-const allocData = {{ latest_by_type }}
+const allocData = {{ latest_by_type | safe }}
 const allocChart = echarts.init(document.getElementById('chart-alloc'))
 const PALETTE = ['#2563EB','#7C3AED','#0891B2','#059669','#D97706','#DC2626','#9B9589']
 const allocSeries = Object.entries(allocData).map(([name, value], i) => ({ name, value }))
@@ -161,7 +161,7 @@ salaryChart.setOption({
   grid: { left: 16, right: 16, top: 8, bottom: 24, containLabel: true },
   xAxis: {
     type: 'category',
-    data: {{ salary_labels }},
+    data: {{ salary_labels | safe }},
     axisLine: { lineStyle: { color: BORDER } },
     axisTick: { show: false },
     axisLabel: { color: MUTED, fontSize: 11, fontFamily: FONT },
@@ -176,7 +176,7 @@ salaryChart.setOption({
   },
   series: [{
     type: 'bar',
-    data: {{ salary_data }},
+    data: {{ salary_data | safe }},
     barMaxWidth: 36,
     itemStyle: { color: '#2563EB', borderRadius: [4, 4, 0, 0] },
     emphasis: { itemStyle: { color: '#1D4ED8' } },
