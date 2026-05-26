@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}录入薪资 · 家庭资产看板{% endblock %}
-{% block page_title %}录入薪资{% endblock %}
+{% block title %}{% if record %}编辑薪资{% else %}录入薪资{% endif %} · 家庭资产看板{% endblock %}
+{% block page_title %}{% if record %}编辑薪资{% else %}录入薪资{% endif %}{% endblock %}
 
 {% block content %}
-<form method="POST" action="/salaries" x-data="salaryForm()" class="max-w-2xl space-y-5">
+<form method="POST" action="{% if record %}/salaries/{{ record.id }}/edit{% else %}/salaries{% endif %}" x-data="salaryForm()" class="max-w-2xl space-y-5">
 
   <!-- 基本信息 -->
   <div class="bg-panel border border-border rounded-xl p-5 space-y-4">
@@ -31,7 +31,7 @@
       <select name="company_id" required
         class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
         {% for c in companies %}
-          <option value="{{ c.id }}">{{ c.name }}{% if not c.end_date %} (在职){% endif %}</option>
+          <option value="{{ c.id }}" {% if record and record.company_id == c.id %}selected{% endif %}>{{ c.name }}{% if not c.end_date %} (在职){% endif %}</option>
         {% endfor %}
       </select>
     </div>
@@ -41,14 +41,14 @@
       <select name="member_id" required
         class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors">
         {% for m in members %}
-          <option value="{{ m.id }}">{{ m.name }}</option>
+          <option value="{{ m.id }}" {% if record and record.member_id == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
       </select>
     </div>
 
     <div>
       <label class="block text-xs text-muted mb-1">实际发薪日（可选）</label>
-      <input type="date" name="pay_date"
+      <input type="date" name="pay_date" value="{{ record.pay_date.isoformat() if record and record.pay_date else '' }}"
         class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
     </div>
   </div>
@@ -115,15 +115,15 @@
 
   <div>
     <label class="block text-xs text-muted mb-1">备注</label>
-    <input type="text" name="note"
+    <input type="text" name="note" value="{{ record.note if record and record.note else '' }}"
       class="w-full border border-border rounded-md px-3 py-2 text-sm bg-surface focus:bg-white transition-colors" />
   </div>
 
   <div class="flex justify-end gap-3">
-    <a href="/salaries" class="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">取消</a>
+    <a href="/salaries{% if record %}/{{ record.id }}{% endif %}" class="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">取消</a>
     <button type="submit"
       class="px-5 py-2.5 bg-accent text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium">
-      保存薪资记录
+      {% if record %}保存修改{% else %}保存薪资记录{% endif %}
     </button>
   </div>
 
@@ -132,14 +132,27 @@
 
 {% block scripts %}
 <script>
+const ITEM_TYPE_LABELS = {{ item_type_labels.values() | list | tojson }};
+const ITEM_TYPE_KEYS   = {{ item_type_labels.keys()   | map(attribute='value') | list | tojson }};
+const TYPE_LABEL_MAP   = Object.fromEntries(ITEM_TYPE_KEYS.map((k, i) => [k, ITEM_TYPE_LABELS[i]]));
+
+const initialItems = [
+  {% for it in items %}
+  { type: {{ it.item_type.value | tojson }}, typeLabel: {{ item_type_labels[it.item_type] | tojson }}, label: {{ it.label | tojson }}, direction: {{ it.direction.value | tojson }}, amount: {{ it.amount | string }} },
+  {% endfor %}
+];
+
 function salaryForm() {
   return {
     year: {{ default_year }},
     month: {{ default_month }},
-    items: [],
+    items: initialItems,
     gross: 0,
     net: 0,
 
+    init() {
+      this.calcTotals()
+    },
     addItem(type, typeLabel, direction) {
       this.items.push({ type, typeLabel, label: typeLabel, direction, amount: '' })
     },

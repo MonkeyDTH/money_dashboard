@@ -3,7 +3,10 @@
 {% block page_title %}{{ record.period | period }} 薪资明细{% endblock %}
 
 {% block header_actions %}
-<a href="/salaries" class="text-sm text-muted hover:text-ink transition-colors">← 返回列表</a>
+<div class="flex items-center gap-4">
+  <a href="/salaries/{{ record.id }}/edit" class="text-sm text-accent hover:text-blue-700 transition-colors font-medium">编辑</a>
+  <a href="/salaries" class="text-sm text-muted hover:text-ink transition-colors">← 返回列表</a>
+</div>
 {% endblock %}
 
 {% block content %}

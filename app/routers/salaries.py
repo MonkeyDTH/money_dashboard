@@ -98,6 +98,81 @@ async def salaries_create(request: Request, session: Session = Depends(get_sessi
     return RedirectResponse("/salaries", status_code=303)
 
 
+@router.get("/{record_id}/edit", name="salaries_edit_form")
+async def salaries_edit_form(record_id: int, request: Request, session: Session = Depends(get_session)):
+    record = session.get(SalaryRecord, record_id)
+    if not record:
+        raise HTTPException(status_code=404)
+    items = session.exec(select(SalaryItem).where(SalaryItem.salary_record_id == record_id)).all()
+    companies = session.exec(select(Company).order_by(Company.start_date.desc())).all()
+    members = session.exec(select(Member)).all()
+    return templates.TemplateResponse(request, "salaries/form.html", {
+        "record": record,
+        "items": items,
+        "companies": companies,
+        "members": members,
+        "item_types": ItemType,
+        "item_type_labels": ITEM_TYPE_LABELS,
+        "default_directions": ITEM_TYPE_DEFAULT_DIRECTION,
+        "directions": Direction,
+        "default_year": record.period.year,
+        "default_month": record.period.month,
+    })
+
+
+@router.post("/{record_id}/edit", name="salaries_update")
+async def salaries_update(record_id: int, request: Request, session: Session = Depends(get_session)):
+    record = session.get(SalaryRecord, record_id)
+    if not record:
+        raise HTTPException(status_code=404)
+
+    form = await request.form()
+    year = int(form["year"])
+    month = int(form["month"])
+    record.period = month_end(year, month)
+    record.member_id = int(form["member_id"])
+    record.company_id = int(form["company_id"])
+    record.pay_date = date.fromisoformat(form["pay_date"]) if form.get("pay_date") else None
+    record.note = form.get("note") or None
+
+    # 清空旧明细，重建
+    old_items = session.exec(select(SalaryItem).where(SalaryItem.salary_record_id == record_id)).all()
+    for item in old_items:
+        session.delete(item)
+    session.flush()
+
+    gross = Decimal("0")
+    net = Decimal("0")
+
+    idx = 0
+    while f"item_type_{idx}" in form:
+        amount_str = form.get(f"amount_{idx}", "0")
+        if amount_str:
+            item_type = ItemType(form[f"item_type_{idx}"])
+            amount = Decimal(amount_str)
+            direction = Direction(form[f"direction_{idx}"])
+            label = form.get(f"label_{idx}", ITEM_TYPE_LABELS[item_type])
+            session.add(SalaryItem(
+                salary_record_id=record.id,
+                item_type=item_type,
+                amount=amount,
+                direction=direction,
+                label=label,
+            ))
+            if direction == Direction.income:
+                gross += amount
+                net += amount
+            else:
+                net -= amount
+        idx += 1
+
+    record.gross = gross
+    record.net = net
+    session.add(record)
+    session.commit()
+    return RedirectResponse(f"/salaries/{record_id}", status_code=303)
+
+
 @router.get("/{record_id}", name="salaries_detail")
 async def salaries_detail(record_id: int, request: Request, session: Session = Depends(get_session)):
     record = session.get(SalaryRecord, record_id)
